@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search Performance Signals for Content Refresh Prioritization</title>
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f7fa;
+    color: #202124;
+    line-height: 1.65;
+}
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 24px;
+}
+header {
+    background: #111827;
+    color: white;
+    padding: 48px;
+    border-radius: 16px;
+    margin-bottom: 28px;
+}
+h1 {
+    font-size: 38px;
+    line-height: 1.15;
+    margin: 0 0 16px;
+}
+h2 {
+    margin-top: 0;
+    color: #111827;
+}
+section {
+    background: white;
+    padding: 32px;
+    margin-bottom: 22px;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.abstract {
+    font-size: 17px;
+}
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 22px 0;
+}
+.metric {
+    background: #f1f5f9;
+    padding: 20px;
+    border-radius: 10px;
+}
+.metric strong {
+    display: block;
+    font-size: 28px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+th {
+    background: #f1f5f9;
+}
+.bar-row {
+    margin: 18px 0;
+}
+.bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+.bar {
+    height: 26px;
+    background: #dbe3ec;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.fill {
+    height: 100%;
+    background: #334155;
+}
+.note {
+    background: #f8fafc;
+    border-left: 4px solid #64748b;
+    padding: 16px;
+    margin: 18px 0;
+}
+li {
+    margin-bottom: 8px;
+}
+a {
+    color: #2563eb;
+}
+footer {
+    text-align: center;
+    color: #64748b;
+    padding: 30px 0;
+}
+@media (max-width: 700px) {
+    header {
+        padding: 30px 24px;
+    }
+    h1 {
+        font-size: 30px;
+    }
+    section {
+        padding: 24px;
+    }
+    .metric-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header>
+<h1>Search Performance Signals for Content Refresh Prioritization</h1>
+<p>Predictive decision-support analysis using FlyRank search-performance data</p>
+</header>
+
+<section>
+<h2>1. Abstract</h2>
+<div class="abstract">
+<p>Can search-performance signals identify content that should be prioritized for refresh review?</p>
+<p>This study uses March 2026 Google Search Console performance signals to predict whether content will experience at least a 20% CTR improvement in the following month, subject to sufficient search volume. A logistic regression model using impressions, clicks, CTR, and average search position was compared with a simple baseline based on low CTR and weak average position. On a client-grouped held-out test set, the model achieved a ROC AUC of 0.740 and an Average Precision of 0.487, compared with 0.652 and 0.342 for the baseline. The results provide measured predictive signal for prioritizing content review, but they do not establish that refreshing content causes improved search performance.</p>
+</div>
+</section>
+
+<section>
+<h2>2. Introduction / Problem Statement</h2>
+<p>Content teams often need to decide which existing pages deserve attention first. A large content inventory makes manual prioritization difficult, particularly when search-performance signals vary substantially across pages.</p>
+<p>The decision supported by this analysis is therefore a prioritization decision: which content items should enter a refresh-review queue first?</p>
+<p>The objective is not to prove that a page needs a refresh or that a refresh will improve rankings. Instead, the objective is to identify measurable search-performance patterns that can support a more focused human review process.</p>
+</section>
+
+<section>
+<h2>3. Data</h2>
+<p>The analysis uses the FlyRank internship warehouse, build v20260703, specifically the <code>fact_content_daily_performance</code> table.</p>
+
+<ul>
+<li><strong>Feature window:</strong> March 2026</li>
+<li><strong>Future label window:</strong> April 2026</li>
+<li><strong>Unit of analysis:</strong> client-content pair</li>
+<li><strong>Signals:</strong> GSC impressions, GSC clicks, CTR, and average search position</li>
+</ul>
+
+<p>Rows without GSC data availability were excluded from the analysis. March performance was used as the model input, while April performance was used only to construct the future-performance label.</p>
+
+<div class="note">
+<strong>Public-safe handling:</strong> Client names, domains, private queries, credentials, and raw client-level exports are not exposed in this paper.
+</div>
+</section>
+
+<section>
+<h2>4. Methodology</h2>
+
+<h3>Features</h3>
+<ul>
+<li>GSC impressions</li>
+<li>GSC clicks</li>
+<li>CTR</li>
+<li>Average search position</li>
+</ul>
+
+<h3>Label</h3>
+<p>A content item is labeled positive when its April 2026 CTR is at least 20% higher than its March 2026 CTR, with at least 100 impressions in both months.</p>
+
+<h3>Model</h3>
+<p>A logistic regression classifier with standardized input features was trained to estimate the probability of the positive outcome.</p>
+
+<h3>Baseline</h3>
+<p>A simple rank-based baseline prioritizes content using low CTR and weak average search position, following the same signals used in the W04 baseline.</p>
+
+<h3>Validation</h3>
+<p>A client-grouped validation split was used so that content from the same client does not appear in both the training and test sets.</p>
+
+<ul>
+<li>Training rows: 136,739</li>
+<li>Test rows: 21,051</li>
+<li>Training clients: 36</li>
+<li>Test clients: 10</li>
+<li>Overlapping clients: 0</li>
+</ul>
+
+<h3>Leakage Control</h3>
+<p>March 2026 features were used to predict April 2026 outcomes. April performance was used only to construct the label and was excluded from the model features. Client and content identifiers were used only for grouping and context.</p>
+</section>
+
+<section>
+<h2>5. Results</h2>
+
+<p>The logistic regression model outperformed the simple baseline on the same client-grouped test split.</p>
+
+<div class="metric-grid">
+<div class="metric">
+<strong>0.740</strong>
+Model ROC AUC
+</div>
+<div class="metric">
+<strong>0.487</strong>
+Model Average Precision
+</div>
+<div class="metric">
+<strong>0.652</strong>
+Baseline ROC AUC
+</div>
+<div class="metric">
+<strong>0.342</strong>
+Baseline Average Precision
+</div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>ROC AUC</th>
+<th>Average Precision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline</td>
+<td>0.652</td>
+<td>0.342</td>
+</tr>
+<tr>
+<td>Logistic Regression</td>
+<td>0.740</td>
+<td>0.487</td>
+</tr>
+</tbody>
+</table>
+
+<h3>ROC AUC Comparison</h3>
+
+<div class="bar-row">
+<div class="bar-label">
+<span>Baseline</span>
+<strong>0.652</strong>
+</div>
+<div class="bar">
+<div class="fill" style="width:65.2%"></div>
+</div>
+</div>
+
+<div class="bar-row">
+<div class="bar-label">
+<span>Logistic Regression</span>
+<strong>0.740</strong>
+</div>
+<div class="bar">
+<div class="fill" style="width:74%"></div>
+</div>
+</div>
+
+<p>The model showed stronger ranking performance on both evaluation metrics. These results indicate useful predictive signal in the combined search-performance features for identifying content whose CTR improves in the following month.</p>
+</section>
+
+<section>
+<h2>6. Limitations &amp; Honest Framing</h2>
+
+<ul>
+<li>The label measures next-month CTR improvement and does not establish that a content refresh caused the improvement.</li>
+<li>The model uses a limited set of GSC search-performance signals and does not include content quality, search intent, technical SEO, or editorial information.</li>
+<li>The validation split is client-grouped rather than fully time-forward, so performance may differ on future unseen data.</li>
+<li>The results are predictive and directional rather than causal.</li>
+<li>The ranked outputs should be used to prioritize human review, not as proof that a page requires a refresh.</li>
+</ul>
+
+<div class="note">
+<strong>Interpretation:</strong> The model is a decision-support tool for prioritization, not an automated content-refresh decision maker.
+</div>
+</section>
+
+<section>
+<h2>7. Ranked Recommendations / Action Playbook</h2>
+
+<p>The model can be used as a prioritization layer for content review.</p>
+
+<ol>
+<li>Prioritize pages with the highest predicted probability of next-month CTR improvement.</li>
+<li>Review high-priority pages alongside current CTR, impressions, and average position.</li>
+<li>Use <strong>REVIEW_REFRESH</strong> for pages with strong predicted opportunity and sufficient search volume.</li>
+<li>Use <strong>MONITOR</strong> for lower-confidence pages rather than forcing an intervention.</li>
+<li>Keep the final refresh decision with a human reviewer who can assess content quality, intent, and business context.</li>
+</ol>
+
+<h3>Example Top Recommendations</h3>
+
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Impressions</th>
+<th>Avg. Position</th>
+<th>CTR</th>
+<th>Predicted Probability</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>91,391</td>
+<td>27.36</td>
+<td>0.050%</td>
+<td>94.8%</td>
+<td>REVIEW_REFRESH</td>
+</tr>
+<tr>
+<td>2</td>
+<td>73,862</td>
+<td>7.40</td>
+<td>0.038%</td>
+<td>91.8%</td>
+<td>REVIEW_REFRESH</td>
+</tr>
+<tr>
+<td>3</td>
+<td>91,388</td>
+<td>20.84</td>
+<td>0.093%</td>
+<td>89.9%</td>
+<td>REVIEW_REFRESH</td>
+</tr>
+<tr>
+<td>4</td>
+<td>61,071</td>
+<td>34.71</td>
+<td>0.056%</td>
+<td>82.4%</td>
+<td>REVIEW_REFRESH</td>
+</tr>
+<tr>
+<td>5</td>
+<td>60,164</td>
+<td>34.14</td>
+<td>0.053%</td>
+<td>82.3%</td>
+<td>REVIEW_REFRESH</td>
+</tr>
+</tbody>
+</table>
+
+<p>The public table intentionally excludes client and content identifiers.</p>
+</section>
+
+<section>
+<h2>8. Reproducibility</h2>
+
+<p>The analysis was implemented in the capstone notebook and the wider internship repository.</p>
+
+<ul>
+<li><a href="https://github.com/hassan9039/intern1">GitHub repository</a></li>
+<li><a href="https://github.com/hassan9039/intern1/blob/main/work/notebooks/capstone.ipynb">Capstone notebook</a></li>
+</ul>
+
+<p>The notebook contains the data preparation, label construction, client-grouped validation, model training, baseline comparison, evaluation metrics, and ranked recommendation generation.</p>
+</section>
+
+<section>
+<h2>9. Acknowledgments &amp; Data Credit</h2>
+
+<p><strong>Built on the FlyRank ML Internship dataset</strong></p>
+
+<p>This research was completed as part of the FlyRank ML Internship and uses the internship warehouse for analysis and educational purposes.</p>
+
+<p><a href="https://flyrank.ai">FlyRank</a></p>
+</section>
+
+<footer>
+<p>Content Opportunity Scoring · FlyRank ML Internship Capstone · 2026</p>
+</footer>
+
+</div>
+</body>
+</html>
